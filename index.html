@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#f8fafc">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="مصروفي">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <title>مصروفي | تتبع المصاريف والمداخيل</title>
+    <!-- خط تجوال العصري -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-body: #f8fafc;
+            --bg-card: #ffffff;
+            --bg-input: #f1f5f9;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --income-color: #10b981;
+            --income-bg: #ecfdf5;
+            --expense-color: #ef4444;
+            --expense-bg: #fef2f2;
+            --primary: #3b82f6;
+            --primary-bg: #eff6ff;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            --radius: 18px;
+        }
+
+        [data-theme="dark"] {
+            --bg-body: #0b1120;
+            --bg-card: #1e293b;
+            --bg-input: #0f172a;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --income-bg: rgba(16, 185, 129, 0.12);
+            --expense-bg: rgba(239, 68, 68, 0.12);
+            --primary-bg: rgba(59, 130, 246, 0.15);
+            --shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Tajawal', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            min-height: 100dvh;
+            padding: calc(12px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));
+            overscroll-behavior-y: none;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding-bottom: 50px;
+        }
+
+        /* رأس الصفحة وأزرار الأدوات */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 4px 0 4px;
+        }
+
+        .brand h1 {
+            font-size: 1.4rem;
+            font-weight: 800;
+        }
+
+        .brand span {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        .icon-btn:active {
+            transform: scale(0.9);
+        }
+
+        /* بطاقات الإحصائيات (الشبكة) */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .dash-card {
+            background: var(--bg-card);
+            border-radius: 14px;
+            padding: 12px 6px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .dash-card.income { border-bottom: 3.5px solid var(--income-color); }
+        .dash-card.expense { border-bottom: 3.5px solid var(--expense-color); }
+        .dash-card.balance { border-bottom: 3.5px solid var(--primary); }
+
+        .dash-label {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .dash-value {
+            font-size: 0.92rem;
+            font-weight: 800;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .dash-card.income .dash-value { color: var(--income-color); }
+        .dash-card.expense .dash-value { color: var(--expense-color); }
+
+        /* البطاقات العامة */
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 16px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        /* حقول الإدخال */
+        .form-inputs {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 13px 14px;
+            border-radius: 12px;
+            border: 1.5px solid var(--border-color);
+            background: var(--bg-input);
+            color: var(--text-main);
+            font-size: 16px;
+            outline: none;
+            transition: border 0.2s;
+        }
+
+        .input-group input:focus {
+            border-color: var(--primary);
+        }
+
+        .btn-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .btn-action {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 14px 10px;
+            border-radius: 14px;
+            border: none;
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: #fff;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.15s;
+        }
+
+        .btn-action:active {
+            transform: scale(0.97);
+        }
+
+        .btn-income { background: linear-gradient(135deg, #10b981, #059669); }
+        .btn-expense { background: linear-gradient(135deg, #ef4444, #dc2626); }
+
+        /* قسم الإحصائيات العامة الجديد */
+        .stats-header-wrap {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .period-badge {
+            font-size: 0.75rem;
+            background: var(--primary-bg);
+            color: var(--primary);
+            padding: 3px 8px;
+            border-radius: 8px;
+            font-weight: 700;
+        }
+
+        .quick-filters {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .filter-btn {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 8px 4px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn.active {
+            background: var(--primary);
+            color: #ffffff;
+            border-color: var(--primary);
+        }
+
+        .custom-range-box {
+            background: var(--bg-input);
+            border-radius: 12px;
+            padding: 10px;
+            margin-bottom: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .custom-inputs-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .date-field {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .date-field label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .date-field input {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 6px 8px;
+            font-size: 16px;
+            color: var(--text-main);
+            outline: none;
+            width: 100%;
+        }
+
+        .btn-calculate {
+            background: var(--text-main);
+            color: var(--bg-card);
+            border: none;
+            border-radius: 8px;
+            padding: 9px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn-calculate:active {
+            opacity: 0.85;
+        }
+
+        /* قسم سجل اليوم */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .section-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+
+        .btn-close-day {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 7px 12px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-close-day:active {
+            transform: scale(0.95);
+        }
+
+        .items-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+
+        .item-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: var(--bg-input);
+            border-right: 4px solid;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .item-card.income { border-color: var(--income-color); background: var(--income-bg); }
+        .item-card.expense { border-color: var(--expense-color); background: var(--expense-bg); }
+
+        .item-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .item-title {
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .item-time {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .item-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .item-amount {
+            font-weight: 800;
+            font-size: 0.95rem;
+            direction: ltr;
+        }
+
+        .item-card.income .item-amount { color: var(--income-color); }
+        .item-card.expense .item-amount { color: var(--expense-color); }
+
+        .btn-delete {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+        }
+
+        .btn-delete:hover {
+            color: var(--expense-color);
+        }
+
+        .btn-delete { min-width: 36px; min-height: 36px; justify-content: center; }
+
+        .toast {
+            position: fixed;
+            left: 50%;
+            bottom: calc(20px + env(safe-area-inset-bottom));
+            transform: translateX(-50%) translateY(20px);
+            background: var(--text-main);
+            color: var(--bg-card);
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s, transform 0.2s;
+            z-index: 50;
+            max-width: calc(100% - 32px);
+        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+        .toast button {
+            background: none; border: none; color: var(--primary);
+            font-weight: 800; font-size: 0.85rem; cursor: pointer;
+        }
+
+        .empty-placeholder {
+            text-align: center;
+            padding: 20px 10px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        /* أرشيف الأيام السابقة (Accordion) */
+        .archive-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .archive-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .archive-header {
+            padding: 12px 14px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            user-select: none;
+        }
+
+        .archive-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .archive-date {
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .archive-arrow {
+            transition: transform 0.3s;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .archive-card.open .archive-arrow {
+            transform: rotate(180deg);
+        }
+
+        .archive-stats-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            background: var(--bg-input);
+            padding: 6px 10px;
+            border-radius: 8px;
+        }
+
+        .archive-details {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            background: var(--bg-body);
+            border-top: 1px dashed var(--border-color);
+        }
+
+        .archive-card.open .archive-details {
+            max-height: 550px;
+            overflow-y: auto;
+        }
+
+        .archive-items-container {
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .archive-actions {
+            display: flex;
+            justify-content: flex-end;
+            padding: 8px 10px;
+            background: var(--bg-card);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .btn-del-archive {
+            font-size: 0.75rem;
+            color: var(--expense-color);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 3px 6px;
+            font-weight: 600;
+        }
+
+        /* أدوات النسخ الاحتياطي (تصدير واستيراد) */
+        .backup-section {
+            display: flex;
+            gap: 10px;
+            margin-top: 6px;
+        }
+
+        .btn-backup {
+            flex: 1;
+            padding: 10px;
+            border-radius: 12px;
+            border: 1px dashed var(--border-color);
+            background: var(--bg-card);
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn-backup:active {
+            background: var(--bg-input);
+        }
+    </style>
+</head>
+<body>
+
+<div class="toast" id="toast"><span id="toastMsg"></span><button id="toastUndo" type="button">تراجع</button></div>
+
+<div class="app-container">
+    <!-- الرأس -->
+    <header>
+        <div class="brand">
+            <h1>مصروفي 🇩🇿</h1>
+            <span id="currentDateDisplay">جاري التحميل...</span>
+        </div>
+        <div class="header-actions">
+            <button class="icon-btn" id="themeToggleBtn" title="تغيير المظهر">🌙</button>
+        </div>
+    </header>
+
+    <!-- لوحة إحصائيات اليوم (Dashboard) -->
+    <div class="dashboard-grid">
+        <div class="dash-card income">
+            <span class="dash-label">مداخيل اليوم</span>
+            <span class="dash-value" id="todayIncome">0 د.ج</span>
+        </div>
+        <div class="dash-card expense">
+            <span class="dash-label">مصاريف اليوم</span>
+            <span class="dash-value" id="todayExpense">0 د.ج</span>
+        </div>
+        <div class="dash-card balance">
+            <span class="dash-label">صافي اليوم</span>
+            <span class="dash-value" id="todayBalance">0 د.ج</span>
+        </div>
+    </div>
+
+    <!-- واجهة الإدخال السريع -->
+    <form class="card" id="txForm" autocomplete="off">
+        <div class="form-inputs">
+            <div class="input-group">
+                <input type="text" id="txTitle" placeholder="اسم العملية (مثال: قهوة، راتب، وقود...)" autocomplete="off" enterkeyhint="next" maxlength="60">
+            </div>
+            <div class="input-group">
+                <input type="text" id="txAmount" placeholder="المبلغ بالدينار الجزائري (د.ج)" inputmode="decimal" enterkeyhint="done">
+            </div>
+        </div>
+        <div class="btn-row">
+            <button type="button" class="btn-action btn-expense" id="btnAddExpense">
+                <span>➕</span> إضافة مصروف
+            </button>
+            <button type="button" class="btn-action btn-income" id="btnAddIncome">
+                <span>➕</span> إضافة مدخول
+            </button>
+        </div>
+    </form>
+
+    <!-- ==================== قسم الإحصائيات العامة الجديد ==================== -->
+    <div class="card">
+        <div class="stats-header-wrap">
+            <h2 class="section-title">الإحصائيات العامة</h2>
+            <span class="period-badge" id="activeFilterBadge">آخر 7 أيام</span>
+        </div>
+
+        <!-- أزرار التصفية السريعة -->
+        <div class="quick-filters">
+            <button class="filter-btn active" id="btnFilter7" data-days="7">آخر 7 أيام</button>
+            <button class="filter-btn" id="btnFilter30" data-days="30">آخر 30 يوماً</button>
+            <button class="filter-btn" id="btnFilterAll" data-days="0">كل الأيام</button>
+        </div>
+
+        <!-- اختيار فترة مخصصة -->
+        <div class="custom-range-box">
+            <div class="custom-inputs-row">
+                <div class="date-field">
+                    <label>من تاريخ:</label>
+                    <input type="date" id="rangeStart">
+                </div>
+                <div class="date-field">
+                    <label>إلى تاريخ:</label>
+                    <input type="date" id="rangeEnd">
+                </div>
+            </div>
+            <button class="btn-calculate" id="btnCalcCustom">احسب الفترة المحددة</button>
+        </div>
+
+        <!-- بطاقات نتائج الإحصائيات العامة للفترة المحددة -->
+        <div class="dashboard-grid">
+            <div class="dash-card income">
+                <span class="dash-label">إجمالي المداخيل</span>
+                <span class="dash-value" id="periodIncome">0 د.ج</span>
+            </div>
+            <div class="dash-card expense">
+                <span class="dash-label">إجمالي المصاريف</span>
+                <span class="dash-value" id="periodExpense">0 د.ج</span>
+            </div>
+            <div class="dash-card balance">
+                <span class="dash-label">الرصيد الصافي</span>
+                <span class="dash-value" id="periodBalance">0 د.ج</span>
+            </div>
+        </div>
+    </div>
+    <!-- ==================================================================== -->
+
+    <!-- سجل عمليات اليوم -->
+    <div class="card">
+        <div class="section-header">
+            <h2 class="section-title">سجل اليوم</h2>
+            <button class="btn-close-day" id="btnCloseDay" title="ترحيل اليوم إلى الأرشيف والبدء من جديد">
+                <span>📁</span> إنهاء وحفظ اليوم
+            </button>
+        </div>
+        <div class="items-list" id="todayList">
+            <!-- تملأ برمجياً -->
+        </div>
+    </div>
+
+    <!-- أرشيف الأيام السابقة (سجل مفصل مع Accordion) -->
+    <div>
+        <h2 class="section-title" style="margin-bottom: 10px; padding-right: 4px;">الأرشيف المفصل</h2>
+        <div class="archive-list" id="archiveContainer">
+            <!-- تملأ برمجياً -->
+        </div>
+    </div>
+
+    <!-- أدوات الحفظ، التصدير والاستيراد (Backup & Restore) -->
+    <div class="backup-section">
+        <button class="btn-backup" id="btnExport">
+            <span>📥</span> تصدير نسخة احتياطية
+        </button>
+        <button class="btn-backup" id="btnImportTrigger">
+            <span>📤</span> استيراد بيانات
+        </button>
+        <input type="file" id="fileImport" accept=".json" style="display: none;">
+    </div>
+</div>
+
+<script src="app.js"></script>
+
+</body>
+</html>
